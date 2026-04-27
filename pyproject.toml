@@ -9,7 +9,7 @@ description = "Anthropic Messages API facade for OpenAI-compatible chat completi
 readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
-authors = [{name = "AIRP"}]
+authors = [{name = "LukerClaw"}]
 
 [project.scripts]
 openai-compatible-claude-adapter = "openai_compatible_adapter.server:main"

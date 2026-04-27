@@ -1,7 +1,7 @@
 """
 Standalone Anthropic Messages API facade for OpenAI-compatible chat endpoints.
 
-The adapter is intentionally free of AIRP project imports. Host projects only
+The adapter is intentionally free of host project imports. Host projects only
 need to provide AdapterConfig, then route /v1/messages, /v1/messages/count_tokens
 and /v1/models to this module.
 """
@@ -13,7 +13,7 @@ import urllib.request
 import uuid
 
 
-DEFAULT_ANTHROPIC_MODEL = "airp-openai-compatible"
+DEFAULT_ANTHROPIC_MODEL = "lukerclaw-openai-compatible"
 
 
 class AdapterNotConfigured(RuntimeError):

@@ -2,12 +2,12 @@
 Standalone HTTP server for the Anthropic-to-OpenAI-compatible adapter.
 
 Environment variables:
-- AIRP_MODEL_BASE_URL or OPENAI_BASE_URL
-- AIRP_MODEL_API_KEY or OPENAI_API_KEY
-- AIRP_MODEL_NAME or OPENAI_MODEL
-- AIRP_MODEL_TEMPERATURE
-- AIRP_MODEL_TIMEOUT
-- AIRP_ADAPTER_PORT
+- LUKERCLAW_MODEL_BASE_URL, AIRP_MODEL_BASE_URL, or OPENAI_BASE_URL
+- LUKERCLAW_MODEL_API_KEY, AIRP_MODEL_API_KEY, or OPENAI_API_KEY
+- LUKERCLAW_MODEL_NAME, AIRP_MODEL_NAME, or OPENAI_MODEL
+- LUKERCLAW_MODEL_TEMPERATURE or AIRP_MODEL_TEMPERATURE
+- LUKERCLAW_MODEL_TIMEOUT or AIRP_MODEL_TIMEOUT
+- LUKERCLAW_ADAPTER_PORT or AIRP_ADAPTER_PORT
 """
 import http.server
 import json
@@ -27,7 +27,15 @@ from .anthropic_openai_adapter import (
 
 
 def env(name, default=""):
-    return os.environ.get(name, default).strip()
+    names = [name]
+    if name.startswith("AIRP_"):
+        names.insert(0, "LUKERCLAW_" + name[len("AIRP_"):])
+    elif name.startswith("LUKERCLAW_"):
+        names.append("AIRP_" + name[len("LUKERCLAW_"):])
+    for item in names:
+        if os.environ.get(item):
+            return os.environ.get(item, default).strip()
+    return default
 
 
 def number_env(name, default):
@@ -39,11 +47,11 @@ def number_env(name, default):
 
 def adapter_config():
     return AdapterConfig(
-        base_url=env("AIRP_MODEL_BASE_URL") or env("OPENAI_BASE_URL"),
-        api_key=env("AIRP_MODEL_API_KEY") or env("OPENAI_API_KEY"),
-        model=env("AIRP_MODEL_NAME") or env("OPENAI_MODEL"),
-        temperature=number_env("AIRP_MODEL_TEMPERATURE", 0.8),
-        timeout=number_env("AIRP_MODEL_TIMEOUT", 120),
+        base_url=env("LUKERCLAW_MODEL_BASE_URL") or env("OPENAI_BASE_URL"),
+        api_key=env("LUKERCLAW_MODEL_API_KEY") or env("OPENAI_API_KEY"),
+        model=env("LUKERCLAW_MODEL_NAME") or env("OPENAI_MODEL"),
+        temperature=number_env("LUKERCLAW_MODEL_TEMPERATURE", 0.8),
+        timeout=number_env("LUKERCLAW_MODEL_TIMEOUT", 120),
     )
 
 
@@ -132,7 +140,7 @@ class AdapterHandler(http.server.BaseHTTPRequestHandler):
 
 
 def main():
-    port = int(env("AIRP_ADAPTER_PORT", "8766"))
+    port = int(env("LUKERCLAW_ADAPTER_PORT", "8766"))
     server = http.server.ThreadingHTTPServer(("127.0.0.1", port), AdapterHandler)
     print(f"Anthropic-to-OpenAI-compatible adapter listening on http://127.0.0.1:{port}")
     print("Routes: /health, /v1/models, /v1/messages, /v1/messages/count_tokens")

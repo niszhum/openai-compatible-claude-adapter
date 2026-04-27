@@ -1,16 +1,16 @@
 # OpenAI-compatible Claude Adapter
 
-这是一个把 Claude/Anthropic Messages API 转成 OpenAI-compatible Chat Completions API 的本地适配器。
+这个适配器把 Claude/Anthropic Messages API 转成 OpenAI-compatible Chat Completions API。
 
 用途：
 
-- 让只支持 Anthropic `/v1/messages` 的工具连接 OpenAI-compatible 模型服务。
-- 让 Claude Code、CCB 或类似 agent 工具使用本地反代、第三方模型网关、本地模型网关。
-- 把 Anthropic 工具调用格式和 OpenAI `tool_calls` 格式互相转换。
+- 让 Claude Code、CCB、Anthropic SDK 类工具连接 OpenAI-compatible 模型服务。
+- 让 LukerClaw 的项目内 CCB agent 使用本地反代、第三方模型网关、本地模型网关。
+- 转换 Anthropic 工具调用格式和 OpenAI `tool_calls` 格式。
 
-它不是模型服务。它只负责协议转换和请求转发。
+它只做协议转换和请求转发，不提供模型能力。
 
-## 支持的接口
+## 支持接口
 
 ```text
 POST /v1/messages
@@ -19,7 +19,7 @@ GET  /v1/models
 GET  /health
 ```
 
-## 支持的转换
+## 支持转换
 
 - Anthropic `messages` -> OpenAI `messages`
 - Anthropic `tools` -> OpenAI `tools`
@@ -31,13 +31,13 @@ GET  /health
 - SSE 流式响应
 - base64 图片块转 OpenAI `image_url`
 
-## 运行
+## 单独运行
 
 ```powershell
-$env:AIRP_MODEL_BASE_URL="http://127.0.0.1:8317/v1"
-$env:AIRP_MODEL_API_KEY="你的 OpenAI-compatible key"
-$env:AIRP_MODEL_NAME="gpt-5.5"
-$env:AIRP_ADAPTER_PORT="8766"
+$env:LUKERCLAW_MODEL_BASE_URL="http://127.0.0.1:8317/v1"
+$env:LUKERCLAW_MODEL_API_KEY="你的 OpenAI-compatible key"
+$env:LUKERCLAW_MODEL_NAME="gpt-5.5"
+$env:LUKERCLAW_ADAPTER_PORT="8766"
 
 python -m openai_compatible_adapter.server
 ```
@@ -46,22 +46,30 @@ python -m openai_compatible_adapter.server
 
 ```text
 http://127.0.0.1:8766/v1/messages
+http://127.0.0.1:8766/v1/messages/count_tokens
+http://127.0.0.1:8766/v1/models
 ```
 
 ## 环境变量
 
 ```text
-AIRP_MODEL_BASE_URL       OpenAI-compatible base URL，例如 http://127.0.0.1:8317/v1
-AIRP_MODEL_API_KEY        OpenAI-compatible API key
-AIRP_MODEL_NAME           模型名，例如 gpt-5.5
-AIRP_MODEL_TEMPERATURE    可选，默认 0.8
-AIRP_MODEL_TIMEOUT        可选，默认 120
-AIRP_ADAPTER_PORT         可选，默认 8766
+LUKERCLAW_MODEL_BASE_URL       OpenAI-compatible base URL，例如 http://127.0.0.1:8317/v1
+LUKERCLAW_MODEL_API_KEY        OpenAI-compatible API key
+LUKERCLAW_MODEL_NAME           模型名，例如 gpt-5.5
+LUKERCLAW_MODEL_TEMPERATURE    可选，默认 0.8
+LUKERCLAW_MODEL_TIMEOUT        可选，默认 120
+LUKERCLAW_ADAPTER_PORT         可选，默认 8766
 ```
 
-也支持这些别名：
+兼容别名：
 
 ```text
+AIRP_MODEL_BASE_URL
+AIRP_MODEL_API_KEY
+AIRP_MODEL_NAME
+AIRP_MODEL_TEMPERATURE
+AIRP_MODEL_TIMEOUT
+AIRP_ADAPTER_PORT
 OPENAI_BASE_URL
 OPENAI_API_KEY
 OPENAI_MODEL
@@ -73,12 +81,12 @@ OPENAI_MODEL
 
 ```powershell
 $env:ANTHROPIC_BASE_URL="http://127.0.0.1:8766"
-$env:ANTHROPIC_API_KEY="local-adapter"
-$env:ANTHROPIC_AUTH_TOKEN="local-adapter"
-$env:ANTHROPIC_MODEL="airp-openai-compatible"
-$env:ANTHROPIC_DEFAULT_OPUS_MODEL="airp-openai-compatible"
-$env:ANTHROPIC_DEFAULT_SONNET_MODEL="airp-openai-compatible"
-$env:ANTHROPIC_DEFAULT_HAIKU_MODEL="airp-openai-compatible"
+$env:ANTHROPIC_API_KEY="lukerclaw-local-adapter"
+$env:ANTHROPIC_AUTH_TOKEN="lukerclaw-local-adapter"
+$env:ANTHROPIC_MODEL="lukerclaw-openai-compatible"
+$env:ANTHROPIC_DEFAULT_OPUS_MODEL="lukerclaw-openai-compatible"
+$env:ANTHROPIC_DEFAULT_SONNET_MODEL="lukerclaw-openai-compatible"
+$env:ANTHROPIC_DEFAULT_HAIKU_MODEL="lukerclaw-openai-compatible"
 
 ccb
 ```
@@ -95,16 +103,20 @@ adapter = AnthropicOpenAIAdapter(AdapterConfig(
 ))
 
 message = adapter.create_message({
-    "model": "airp-openai-compatible",
+    "model": "lukerclaw-openai-compatible",
     "messages": [{"role": "user", "content": "Reply exactly OK"}],
     "max_tokens": 64,
 })
 ```
 
-## 适用场景
+## LukerClaw 项目内用法
 
-- 本地 OpenAI-compatible 反代
-- 第三方 OpenAI-compatible 网关
-- 本地模型服务
-- Claude Code / CCB 需要接入非 Anthropic 官方接口
-- Agent 工具需要保留工具调用能力
+LukerClaw 的 `skills/anthropic_openai_proxy.py` 是这个独立适配器的 HTTP handler 包装层。项目启动 `skills/server.py` 后会暴露：
+
+```text
+http://127.0.0.1:8765/v1/messages
+http://127.0.0.1:8765/v1/messages/count_tokens
+http://127.0.0.1:8765/v1/models
+```
+
+运行 `start-claude-openai-compatible.bat` 可直接启动项目内桥接服务器并拉起 `ccb`。
